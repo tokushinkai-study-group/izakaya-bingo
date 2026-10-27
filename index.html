@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>居酒屋ビンゴ 🍺</title>
+<style>
+:root{--ink:#24362c;--green:#294437;--cream:#fbf7ee;--paper:#fffdf8;--gold:#e9c77d;--muted:#6e796f;--line:#e7e0d2;--hit:#dcebdc;--hit-ink:#28583c}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:system-ui,-apple-system,"Yu Gothic",Meiryo,sans-serif}
+header{background:var(--green);color:white;padding:25px 16px 23px;text-align:center;border-bottom:5px solid var(--gold)}
+.eyebrow{font-size:.72rem;letter-spacing:.2em;color:var(--gold);font-weight:800}.brand{font-size:clamp(1.8rem,6vw,2.6rem);font-weight:900;letter-spacing:.04em;margin:5px 0}.sub{font-size:.9rem;color:#e5ebe5}
+main{max-width:760px;margin:0 auto;padding:18px 12px 38px}.panel{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:14px;box-shadow:0 4px 14px #33220a0a}
+.topline{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.stat-label{font-size:.76rem;color:var(--muted)}.stat{font-weight:900;font-size:1.35rem}.pill{background:#f4ead1;color:#735a22;padding:6px 10px;border-radius:99px;font-size:.78rem;font-weight:800}
+.progress{height:7px;background:#eee8dc;border-radius:99px;overflow:hidden;margin-top:10px}.bar{height:100%;width:0;background:#709775;transition:width .2s}
+.board{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.cell{border:1px solid var(--line);background:#fffefa;border-radius:11px;min-height:84px;padding:7px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;color:var(--ink);font:inherit;cursor:pointer;overflow-wrap:anywhere;transition:transform .1s,background .15s}
+.cell:active{transform:scale(.97)}.cell .emoji{font-size:1.35rem;line-height:1.1;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#f7edd8;box-shadow:inset 0 -2px 0 #ead8b5}.cell .label{font-size:clamp(.65rem,2.4vw,.83rem);line-height:1.3;font-weight:650}
+.cell.done{background:var(--hit);border-color:#a7c9a9;color:var(--hit-ink)}.cell.done .emoji{font-weight:900;background:#c5e0c7;box-shadow:inset 0 -2px 0 #a6c9a9}.cell.free{background:var(--green);color:#fff3d4;border-color:var(--green);cursor:default}.cell.free .emoji{background:#476554;box-shadow:inset 0 -2px 0 #20372b}.cell.free .label{font-weight:900;font-size:.9rem}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.share-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.share-actions .btn{flex:1}.btn{border:0;border-radius:12px;padding:12px 15px;font-weight:800;font-size:.9rem;cursor:pointer}.primary{background:var(--green);color:white;flex:1}.secondary{background:#f0eadf;color:var(--ink)}.result{display:none;margin-top:12px;background:#f7efd9;border:1px solid #ead7a4;border-radius:12px;padding:12px;font-weight:750}.result.show{display:block}
+h2{font-size:1rem;margin:0 0 9px}.small{font-size:.82rem;color:var(--muted);line-height:1.65}.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.tag{font-size:.72rem;border-radius:99px;padding:5px 8px;background:#f2ede3}.tag.a{background:#f6e7ce}.tag.m{background:#dcebdd}.tag.o{background:#e5e4f5}
+dialog{border:0;border-radius:18px;max-width:420px;width:calc(100% - 28px);padding:22px;background:var(--paper);color:var(--ink);box-shadow:0 20px 70px #0004}dialog::backdrop{background:#10201899}dialog h2{font-size:1.25rem}.dialog-actions{display:flex;justify-content:flex-end;margin-top:16px}
+@media(max-width:420px){main{padding:12px 8px 28px}.panel{padding:11px}.board{gap:4px}.cell{min-height:67px;border-radius:8px;padding:5px 2px}.cell .emoji{font-size:.9rem}.cell .label{font-size:.62rem}.brand{font-size:1.8rem}}
+</style>
+</head>
+<body>
+<header><div class="eyebrow">TONIGHT'S LITTLE ADVENTURE</div><div class="brand">🍺 居酒屋ビンゴ</div><div class="sub">今夜、何マス埋められる？</div></header>
+<main>
+<section class="panel">
+ <div class="topline"><div><div class="stat-label">今夜の達成マス（FREE除く）</div><div class="stat"><span id="count">0</span> / 24</div></div><div class="pill" id="bingoPill">ビンゴ 0列</div></div>
+ <div class="progress"><div class="bar" id="bar"></div></div>
+ <div class="legend"><span class="tag a">👀 あるある</span><span class="tag m">🍢 ミッション</span><span class="tag o">🕵️ 人間観察</span></div>
+</section>
+<section class="panel">
+ <div class="board" id="board" aria-label="居酒屋ビンゴカード"></div>
+ <div class="result" id="result" role="status"></div>
+ <div class="actions"><button class="btn primary" id="newGame">🔀 新しいビンゴカード</button><button class="btn secondary" id="reset">↺ 達成リセット</button></div>
+ <div class="share-actions"><button class="btn secondary" id="shareResult">📣 結果をSNSでシェア</button><button class="btn secondary" id="saveImage">🖼️ 結果画像を保存</button></div>
+ <div class="small" id="shareNote" aria-live="polite">ビンゴ結果を画像にしてシェアできるよ！</div>
+</section>
+<section class="panel">
+ <h2>🏆 今夜の称号</h2><div class="stat" id="rank">駆け出し飲兵衛</div><div class="small" id="rankText">まずは気楽に、1マスから！</div>
+</section>
+<section class="panel">
+ <h2>遊び方</h2>
+ <div class="small">気づいたこと・達成したミッションのマスをタップ！ 縦・横・斜めのどれか1列が揃えばビンゴ。カードは毎回ランダムに変わるよ。中央のFREEはいつでも固定！<br>※人に話しかけたり、お酒を追加注文したりする必要はなし。無理せず自分のペースで楽しもう🍻</div>
+</section>
+</main>
+<dialog id="bingoDialog"><h2>🎉 ビンゴーー！！</h2><p id="bingoMessage">酒場の運が味方した！</p><div class="dialog-actions"><button class="btn primary" id="closeDialog">乾杯！ 🍻</button></div></dialog>
+<script>
+const tasks=[
+["👀","テレビで野球が流れている","a"],["👀","壁に手書きの短冊メニュー","a"],["👀","お通しが思いのほかうまい","a"],["👀","店内に赤ちょうちんがある","a"],["👀","「とりあえず生」が聞こえる","a"],
+["👀","カウンターにボトルが並んでる","a"],["👀","店員さんが忙しそうに走る","a"],["👀","メニューにおすすめ欄がある","a"],["👀","店内BGMが懐かしい","a"],["👀","厨房からいい音がする","a"],
+["👀","おしぼりが温かい","a"],["👀","壁に謎の貼り紙がある","a"],["👀","メニュー名に個性がある","a"],["👀","常連っぽい人を見かける","a"],["👀","グラスがキンキンに冷えてる","a"],
+["👀","店内のテレビに全員注目","a"],["👀","店員さんの「どうぞー」が軽快","a"],["👀","テーブルに調味料が3種類以上","a"],["👀","お客さんの笑い声が響く","a"],["👀","店内に手書きのおすすめ","a"],
+["🍢","知らない料理をメニューで発見","m"],["🍢","今日のベストつまみを決める","m"],["🍢","普段頼まない料理を1品頼む","m"],["🍢","店員さんにおすすめを聞く","m"],["🍢","気になる地酒・銘柄を発見","m"],
+["🍢","メニューの写真と実物を見比べる","m"],["🍢","焼き物を1品楽しむ","m"],["🍢","自分なりの食レポを心の中で言う","m"],["🍢","最初の一口で「うまっ」となる","m"],["🍢","次に来たら頼むメニューを決める","m"],
+["🍢","料理をゆっくり味わって食べる","m"],["🍢","今日の気分にぴったりの一品","m"],["🍢","お通しの正体を考える","m"],["🍢","飲み物と料理の相性が当たり","m"],["🍢","予算内で満足できそう","m"],
+["🕵️","隣の席と注文がかぶる","o"],["🕵️","店員さんと常連さんの息がぴったり","o"],["🕵️","ひとり飲み仲間を発見","o"],["🕵️","乾杯の声が聞こえる","o"],["🕵️","誰かがメニューで真剣に悩んでる","o"],
+["🕵️","料理が来て場がちょっと盛り上がる","o"],["🕵️","店員さんの神接客に遭遇","o"],["🕵️","グループで同時に笑いが起きる","o"],["🕵️","誰かが「これうまい」と言ってる","o"],["🕵️","お客さんが店員さんにお礼を言う","o"],
+["🕵️","入店時と退店時に挨拶が飛び交う","o"],["🕵️","隣の人が自分と同じものを頼む","o"],["🕵️","店員さんが注文を覚えている","o"],["🕵️","誰かの注文がめちゃくちゃ手慣れてる","o"],["🕵️","店内にほっこりする瞬間がある","o"]
+];
+const boardEl=document.getElementById("board"), countEl=document.getElementById("count"), bar=document.getElementById("bar"), bingoPill=document.getElementById("bingoPill"), result=document.getElementById("result"), rank=document.getElementById("rank"), rankText=document.getElementById("rankText"), dialog=document.getElementById("bingoDialog");
+let card=[],done=new Set([12]),lastBingos=0,previousCardKey="";
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function newCard(){
+ const pools={a:shuffle(tasks.filter(t=>t[2]==="a")),m:shuffle(tasks.filter(t=>t[2]==="m")),o:shuffle(tasks.filter(t=>t[2]==="o"))};
+ // 24 slots: balanced mix, 8 from each category
+ const chosen=[...pools.a.slice(0,8),...pools.m.slice(0,8),...pools.o.slice(0,8)];
+ let next=shuffle(chosen);
+ // Avoid generating the exact same card twice in a row.
+ let key=next.map(t=>t[1]).join("|");
+ for(let tries=0;key===previousCardKey && tries<8;tries++){next=shuffle(chosen);key=next.map(t=>t[1]).join("|")}
+ previousCardKey=key;
+ card=next;card.splice(12,0,["🍻","FREE","free"]);done=new Set([12]);lastBingos=0;dialog.close?.();render();update();
+ document.getElementById("shareNote").textContent="新しいカードができたよ！気になるマスをタップしよう。";
+}
+function lines(){let out=[];for(let r=0;r<5;r++)out.push([0,1,2,3,4].map(c=>r*5+c));for(let c=0;c<5;c++)out.push([0,1,2,3,4].map(r=>r*5+c));out.push([0,6,12,18,24],[4,8,12,16,20]);return out}
+function bingoCount(){return lines().filter(line=>line.every(i=>done.has(i))).length}
+function render(){
+ boardEl.innerHTML="";
+ card.forEach((t,i)=>{const b=document.createElement("button");b.className="cell"+(done.has(i)?" done":"")+(i===12?" free":"");b.type="button";b.setAttribute("aria-pressed",done.has(i)?"true":"false");b.innerHTML=`<span class="emoji">${done.has(i)&&i!==12?"✓":illustrationFor(t)}</span><span class="label"></span>`;b.querySelector(".label").textContent=t[1];if(i===12){b.disabled=true;b.setAttribute("aria-label","中央 FREE（達成済み）")}else{b.addEventListener("click",()=>{if(done.has(i))done.delete(i);else done.add(i);render();update()})}boardEl.appendChild(b)});
+}
+function update(){
+ const real=done.size-1,bc=bingoCount();countEl.textContent=real;bar.style.width=(real/24*100)+"%";bingoPill.textContent=`ビンゴ ${bc}列`;
+ let title="駆け出し飲兵衛",desc="まずは気楽に、1マスから！";
+ if(real>=24){title="伝説のひとり飲み";desc="全マス達成！今夜の酒場を完全攻略。";}
+ else if(bc>=3){title="酒場の生態系マスター";desc="もはや店内の空気と一体化している。";}
+ else if(bc>=2){title="居酒屋観察員";desc="目の付けどころが酒場プロ。";}
+ else if(bc>=1){title="大衆酒場の新人卒業";desc="お見事！まずは一杯…じゃなくて一列！";}
+ else if(real>=15){title="酒場のベテラン候補";desc="かなり見つけたね。観察眼が冴えてる！";}
+ else if(real>=5){title="期待の酒場ウォッチャー";desc="いいペース！次のマスもゆるっと探そう。";}
+ rank.textContent=title;rankText.textContent=desc;
+ result.classList.toggle("show",bc>0);result.textContent=bc>0?`🎉 ${bc}列ビンゴ！ 称号：「${title}」`: "";
+ if(bc>lastBingos && bc>0){document.getElementById("bingoMessage").textContent=`${bc}列ビンゴ達成！ 称号は「${title}」。今夜の引き、強い！`;dialog.showModal()}
+ lastBingos=bc;
+}
+document.getElementById("newGame").addEventListener("click",newCard);
+document.getElementById("reset").addEventListener("click",()=>{done=new Set([12]);lastBingos=0;render();update()});
+document.getElementById("closeDialog").addEventListener("click",()=>dialog.close());
+function illustrationFor(t){
+ const text=t[1];
+ if(t[2]==="free") return "🍻";
+ if(/テレビ|BGM|音/.test(text)) return "📺";
+ if(/メニュー|短冊|貼り紙|おすすめ|銘柄|地酒/.test(text)) return "📋";
+ if(/お通し|つまみ|料理|一品|焼き物|食べ|うま|味わ/.test(text)) return "🍢";
+ if(/赤ちょうちん|店内/.test(text)) return "🏮";
+ if(/生|グラス|飲み物|乾杯|注文/.test(text)) return "🍺";
+ if(/店員|接客|厨房|挨拶|常連/.test(text)) return "🙋";
+ if(/隣|お客さん|グループ|誰か|ひとり飲み/.test(text)) return "👀";
+ if(/予算|気分|ベスト|決める|心の中/.test(text)) return "✨";
+ return t[0]==="👀"?"👀":t[0]==="🍢"?"🍡":"🕵️";
+}
+function shareText(){
+ const real=done.size-1,bc=bingoCount();
+ return `🍺 居酒屋ビンゴ結果！\n達成 ${real}/24マス・ビンゴ ${bc}列\n称号：${rank.textContent}\n今夜の酒場をゆるっと攻略中！\n#居酒屋ビンゴ #ひとり飲み`;
+}
+function makeShareCanvas(){
+ const canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");
+ canvas.width=1080;canvas.height=1350;
+ ctx.fillStyle="#fbf7ee";ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.fillStyle="#294437";ctx.fillRect(0,0,canvas.width,230);
+ ctx.fillStyle="#e9c77d";ctx.font="bold 28px sans-serif";ctx.textAlign="center";ctx.fillText("TONIGHT'S LITTLE ADVENTURE",540,58);
+ ctx.fillStyle="#fffdf8";ctx.font="bold 64px sans-serif";ctx.fillText("🍺 居酒屋ビンゴ",540,145);
+ ctx.font="28px sans-serif";ctx.fillStyle="#e5ebe5";ctx.fillText("今夜、何マス埋められた？",540,195);
+ const left=90,top=285,size=180,gap=8;
+ card.forEach((t,i)=>{
+   const x=left+(i%5)*(size+gap),y=top+Math.floor(i/5)*(size+gap);
+   ctx.fillStyle=done.has(i)?(i===12?"#294437":"#dcebdc"):"#fffefa";
+   ctx.strokeStyle=done.has(i)?"#a7c9a9":"#e7e0d2";ctx.lineWidth=3;
+   roundRect(ctx,x,y,size,size,18);ctx.fill();ctx.stroke();
+   ctx.textAlign="center";ctx.fillStyle=i===12?"#fff3d4":"#24362c";
+   ctx.font="42px sans-serif";ctx.fillText(done.has(i)&&i!==12?"✓":illustrationFor(t),x+size/2,y+58);
+   ctx.font="bold 22px sans-serif";
+   wrapCanvasText(ctx,t[1],x+size/2,y+95,size-22,29,3);
+ });
+ ctx.fillStyle="#294437";ctx.textAlign="center";ctx.font="bold 38px sans-serif";
+ ctx.fillText(`達成 ${done.size-1}/24　｜　ビンゴ ${bingoCount()}列`,540,1260);
+ ctx.font="bold 32px sans-serif";ctx.fillText(`称号：${rank.textContent}`,540,1310);
+ return canvas;
+}
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight,maxLines){
+ const words=Array.from(text);let lines=[],line="";
+ for(const ch of words){const test=line+ch;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=ch}else line=test}
+ if(line)lines.push(line);if(lines.length>maxLines){lines=lines.slice(0,maxLines);lines[maxLines-1]=lines[maxLines-1].slice(0,-1)+"…"}
+ lines.forEach((l,i)=>ctx.fillText(l,x,y+i*lineHeight));
+}
+async function saveResultImage(){
+ const canvas=makeShareCanvas();
+ const note=document.getElementById("shareNote");
+ try{
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png"));
+  if(!blob)throw new Error("画像を作成できませんでした");
+  const file=new File([blob],"izakaya-bingo-result.png",{type:"image/png"});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+   await navigator.share({title:"居酒屋ビンゴ結果",text:shareText(),files:[file]});
+   note.textContent="シェアメニューを開いたよ！";
+  }else{
+   const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="izakaya-bingo-result.png";a.click();URL.revokeObjectURL(url);
+   note.textContent="結果画像を保存したよ！SNSの投稿に添付してね。";
+  }
+ }catch(e){if(e.name!=="AbortError")note.textContent="画像の共有ができなかったみたい。『結果画像を保存』を試してね。"}
+}
+document.getElementById("shareResult").addEventListener("click",saveResultImage);
+document.getElementById("saveImage").addEventListener("click",async()=>{
+ const canvas=makeShareCanvas(),blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png"));
+ if(!blob){document.getElementById("shareNote").textContent="画像を作れなかったみたい。";return}
+ const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="izakaya-bingo-result.png";a.click();URL.revokeObjectURL(url);
+ document.getElementById("shareNote").textContent="結果画像を保存したよ！SNSの投稿に添付してね。";
+});
+newCard();
+</script>
+</body></html>
